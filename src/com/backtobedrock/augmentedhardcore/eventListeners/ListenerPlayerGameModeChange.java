@@ -24,7 +24,7 @@ public class ListenerPlayerGameModeChange extends AbstractEventListener {
         Unban ban = this.plugin.getServerRepository().getServerDataSync().getBan(player.getUniqueId());
 
         if (ban != null && event.getNewGameMode() != GameMode.SPECTATOR) {
-            player.sendMessage(String.format("§cCannot change game mode, you are still banned for another %s.", MessageUtils.getTimeFromTicks(MessageUtils.timeUnitToTicks(ChronoUnit.SECONDS.between(LocalDateTime.now(), ban.getBan().ban().getExpirationDate()), TimeUnit.SECONDS), TimePattern.LONG));
+            player.sendMessage(String.format("§cCannot change game mode, you are still banned for another %s.", MessageUtils.getTimeFromTicks(MessageUtils.timeUnitToTicks(ChronoUnit.SECONDS.between(LocalDateTime.now(), ban.getBan().ban().getExpirationDate()), TimeUnit.SECONDS), TimePattern.LONG)));
             event.setCancelled(true);
         }
     }
