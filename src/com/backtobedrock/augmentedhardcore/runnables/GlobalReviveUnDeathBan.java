@@ -58,19 +58,27 @@ public class GlobalReviveUnDeathBan extends BukkitRunnable {
             return;
         }
 
-        try {
-            ZonedDateTime now = ZonedDateTime.now(this.configuration.getTimezone());
-            if (now.isBefore(this.nextRunAt)) {
-                return;
-            }
-
-            this.plugin.getLogger().log(Level.INFO, "Running GlobalReviveUnDeathBan at {0}.", now);
-            this.plugin.getServerRepository().getServerData(this.plugin.getServer()).thenAcceptAsync(this::runGlobalReset, this.plugin.getExecutor());
-            this.nextRunAt = computeNextRun(now.plusSeconds(1));
-            this.plugin.getLogger().log(Level.INFO, "GlobalReviveUnDeathBan completed. Next run scheduled for {0}.", this.nextRunAt);
-        } catch (Exception ex) {
-            this.plugin.getLogger().log(Level.SEVERE, "GlobalReviveUnDeathBan failed to execute.", ex);
+        ZonedDateTime now = ZonedDateTime.now(this.configuration.getTimezone());
+        if (now.isBefore(this.nextRunAt)) {
+            return;
         }
+
+        this.plugin.getLogger().log(Level.INFO, "Running GlobalReviveUnDeathBan at {0}.", now);
+        this.nextRunAt = computeNextRun(now.plusSeconds(1));
+
+        this.plugin.getServerRepository().getServerData(this.plugin.getServer())
+                .thenAccept(serverData -> Bukkit.getScheduler().runTask(this.plugin, () -> {
+                    try {
+                        this.runGlobalReset(serverData);
+                        this.plugin.getLogger().log(Level.INFO, "GlobalReviveUnDeathBan completed. Next run scheduled for {0}.", this.nextRunAt);
+                    } catch (Exception ex) {
+                        this.plugin.getLogger().log(Level.SEVERE, "GlobalReviveUnDeathBan failed to execute on main thread.", ex);
+                    }
+                }))
+                .exceptionally(ex -> {
+                    this.plugin.getLogger().log(Level.SEVERE, "GlobalReviveUnDeathBan failed to load server data.", ex);
+                    return null;
+                });
     }
 
     private void runGlobalReset(ServerData serverData) {
