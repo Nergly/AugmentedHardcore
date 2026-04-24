@@ -41,8 +41,10 @@ LivesAfterBan: 1
 #Minimum is 1.
 LivesLostPerDeath: 1
 
-#Should losing lives be disabled in any worlds?
-DisableLosingLivesInWorlds: [ ]
+#Should losing lives only be enabled in specific worlds?
+#Leave empty to enable losing lives in all worlds.
+#Add worlds here to make losing lives world-specific.
+EnableLosingLivesInWorlds: [world, world_nether, world_the_end]
 #- world
 #- world_nether
 #- world_the_end

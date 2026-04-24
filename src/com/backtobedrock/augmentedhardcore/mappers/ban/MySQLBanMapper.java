@@ -53,44 +53,55 @@ public class MySQLBanMapper extends AbstractMapper implements IBanMapper {
 
     @Override
     public void updateBan(Server server, UUID uuid, BanEntry ban) {
-        CompletableFuture.runAsync(() -> {
-            String sql = "INSERT INTO ah_ban (`ban_id`,`player_uuid`,`server_ip`,`server_port`,`start_date`,`expiration_date`,`ban_time`,`damage_cause`,`damage_cause_type`,`world`,`x`,`y`,`z`,`has_killer`,`killer_name`,`killer_display_name`,`killer_entity_type`,`in_combat`,`in_combat_with_name`,`in_combat_with_display_name`,`in_combat_with_entity_type`,`death_message`,`time_since_previous_death_ban`,`time_since_previous_death`)"
-                    + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-                    + "ON DUPLICATE KEY UPDATE "
-                    + "`server_ip` = ?,"
-                    + "`server_port` = ?,"
-                    + "`start_date` = ?,"
-                    + "`expiration_date` = ?,"
-                    + "`ban_time` = ?,"
-                    + "`damage_cause` = ?,"
-                    + "`damage_cause_type` = ?,"
-                    + "`world` = ?,"
-                    + "`x` = ?,"
-                    + "`y` = ?,"
-                    + "`z` = ?,"
-                    + "`has_killer`= ?,"
-                    + "`killer_name`= ?,"
-                    + "`killer_display_name`= ?,"
-                    + "`killer_entity_type`= ?,"
-                    + "`in_combat`= ?,"
-                    + "`in_combat_with_name`= ?,"
-                    + "`in_combat_with_display_name`= ?,"
-                    + "`in_combat_with_entity_type`= ?,"
-                    + "`death_message` = ?,"
-                    + "`time_since_previous_death_ban` = ?,"
-                    + "`time_since_previous_death` = ?;";
+        if (this.plugin.isStopping()) {
+            this.updateBanSync(server, uuid, ban);
+            return;
+        }
 
-            try (Connection connection = this.database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                bindBanParameters(preparedStatement, 1, server, uuid, ban);
-                bindBanParameters(preparedStatement, 25, server, uuid, ban);
-                preparedStatement.execute();
-            } catch (SQLException | UnknownHostException e) {
-                this.plugin.getLogger().log(Level.SEVERE, "Could not update ban.", e);
-            }
-        }, this.plugin.getExecutor()).exceptionally(ex -> {
+        this.updateBanAsync(server, uuid, ban).exceptionally(ex -> {
             this.plugin.getLogger().log(Level.SEVERE, "Could not update ban asynchronously.", ex);
             return null;
         });
+    }
+
+    public CompletableFuture<Void> updateBanAsync(Server server, UUID uuid, BanEntry ban) {
+        return CompletableFuture.runAsync(() -> this.updateBanSync(server, uuid, ban), this.plugin.getExecutor());
+    }
+
+    public void updateBanSync(Server server, UUID uuid, BanEntry ban) {
+        String sql = "INSERT INTO ah_ban (`ban_id`,`player_uuid`,`server_ip`,`server_port`,`start_date`,`expiration_date`,`ban_time`,`damage_cause`,`damage_cause_type`,`world`,`x`,`y`,`z`,`has_killer`,`killer_name`,`killer_display_name`,`killer_entity_type`,`in_combat`,`in_combat_with_name`,`in_combat_with_display_name`,`in_combat_with_entity_type`,`death_message`,`time_since_previous_death_ban`,`time_since_previous_death`)"
+                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+                + "ON DUPLICATE KEY UPDATE "
+                + "`server_ip` = ?,"
+                + "`server_port` = ?,"
+                + "`start_date` = ?,"
+                + "`expiration_date` = ?,"
+                + "`ban_time` = ?,"
+                + "`damage_cause` = ?,"
+                + "`damage_cause_type` = ?,"
+                + "`world` = ?,"
+                + "`x` = ?,"
+                + "`y` = ?,"
+                + "`z` = ?,"
+                + "`has_killer`= ?,"
+                + "`killer_name`= ?,"
+                + "`killer_display_name`= ?,"
+                + "`killer_entity_type`= ?,"
+                + "`in_combat`= ?,"
+                + "`in_combat_with_name`= ?,"
+                + "`in_combat_with_display_name`= ?,"
+                + "`in_combat_with_entity_type`= ?,"
+                + "`death_message` = ?,"
+                + "`time_since_previous_death_ban` = ?,"
+                + "`time_since_previous_death` = ?;";
+
+        try (Connection connection = this.database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            bindBanParameters(preparedStatement, 1, server, uuid, ban);
+            bindBanParameters(preparedStatement, 25, server, uuid, ban);
+            preparedStatement.execute();
+        } catch (SQLException | UnknownHostException e) {
+            this.plugin.getLogger().log(Level.SEVERE, "Could not update ban.", e);
+        }
     }
 
     private void bindBanParameters(PreparedStatement preparedStatement, int startIndex, Server server, UUID uuid, BanEntry ban) throws SQLException, UnknownHostException {
@@ -125,20 +136,27 @@ public class MySQLBanMapper extends AbstractMapper implements IBanMapper {
 
     @Override
     public void deleteBan(UUID uuid, Integer id) {
-        CompletableFuture.runAsync(() -> {
-            String sql = "DELETE FROM ah_ban " +
-                    "WHERE ban_id = ? AND player_uuid = ?;";
+        if (this.plugin.isStopping()) {
+            this.deleteBanSync(uuid, id);
+            return;
+        }
 
-            try (Connection connection = this.database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                preparedStatement.setString(1, id.toString());
-                preparedStatement.setString(2, uuid.toString());
-                preparedStatement.execute();
-            } catch (SQLException e) {
-                this.plugin.getLogger().log(Level.SEVERE, "Could not delete ban.", e);
-            }
-        }, this.plugin.getExecutor()).exceptionally(ex -> {
+        CompletableFuture.runAsync(() -> this.deleteBanSync(uuid, id), this.plugin.getExecutor()).exceptionally(ex -> {
             this.plugin.getLogger().log(Level.SEVERE, "Could not delete ban asynchronously.", ex);
             return null;
         });
+    }
+
+    private void deleteBanSync(UUID uuid, Integer id) {
+        String sql = "DELETE FROM ah_ban " +
+                "WHERE ban_id = ? AND player_uuid = ?;";
+
+        try (Connection connection = this.database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, id.toString());
+            preparedStatement.setString(2, uuid.toString());
+            preparedStatement.execute();
+        } catch (SQLException e) {
+            this.plugin.getLogger().log(Level.SEVERE, "Could not delete ban.", e);
+        }
     }
 }

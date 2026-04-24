@@ -5,7 +5,6 @@ import com.backtobedrock.augmentedhardcore.domain.BanEntry;
 import com.backtobedrock.augmentedhardcore.domain.data.ServerData;
 import com.backtobedrock.augmentedhardcore.mappers.AbstractMapper;
 import com.backtobedrock.augmentedhardcore.mappers.ban.MySQLBanMapper;
-import org.bukkit.Bukkit;
 import org.bukkit.Server;
 
 import java.net.InetAddress;
@@ -39,7 +38,7 @@ public class MySQLServerMapper extends AbstractMapper implements IServerMapper {
 
     @Override
     public void insertServerDataSync(ServerData serverData) {
-        Bukkit.getScheduler().runTask(this.plugin, () -> this.updateServerData(serverData).join());
+        this.updateServerDataSync(serverData);
     }
 
     @Override
@@ -76,49 +75,68 @@ public class MySQLServerMapper extends AbstractMapper implements IServerMapper {
 
     @Override
     public CompletableFuture<Void> updateServerData(ServerData data) {
-        return CompletableFuture.runAsync(() -> {
-            String sql = "INSERT INTO ah_server (`server_ip`, `server_port`, `total_death_bans`)"
-                    + "VALUES(?, ?, ?)"
-                    + "ON DUPLICATE KEY UPDATE `total_death_bans` = ?;";
+        if (this.plugin.isStopping()) {
+            this.updateServerDataSync(data);
+            return CompletableFuture.completedFuture(null);
+        }
 
-            try (Connection connection = this.database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                preparedStatement.setString(1, InetAddress.getLocalHost().getHostAddress());
-                preparedStatement.setInt(2, this.plugin.getServer().getPort());
-                preparedStatement.setInt(3, data.getTotalDeathBans());
-                preparedStatement.setInt(4, data.getTotalDeathBans());
-                preparedStatement.execute();
-            } catch (SQLException | UnknownHostException e) {
-                this.plugin.getLogger().log(Level.SEVERE, "Could not update server data.", e);
-                return;
-            }
-            data.getOngoingBans().forEach((key, value) -> this.banMapper.updateBan(this.plugin.getServer(), key, value.getBan()));
-        }, this.plugin.getExecutor()).exceptionally(ex -> {
+        return CompletableFuture.runAsync(() -> this.updateServerDataSync(data), this.plugin.getExecutor()).exceptionally(ex -> {
             this.plugin.getLogger().log(Level.SEVERE, "Could not update server data asynchronously.", ex);
             return null;
         });
     }
 
+    private void updateServerDataSync(ServerData data) {
+        String sql = "INSERT INTO ah_server (`server_ip`, `server_port`, `total_death_bans`)"
+                + "VALUES(?, ?, ?)"
+                + "ON DUPLICATE KEY UPDATE `total_death_bans` = ?;";
+
+        try (Connection connection = this.database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, InetAddress.getLocalHost().getHostAddress());
+            preparedStatement.setInt(2, this.plugin.getServer().getPort());
+            preparedStatement.setInt(3, data.getTotalDeathBans());
+            preparedStatement.setInt(4, data.getTotalDeathBans());
+            preparedStatement.execute();
+        } catch (SQLException | UnknownHostException e) {
+            this.plugin.getLogger().log(Level.SEVERE, "Could not update server data.", e);
+            return;
+        }
+
+        data.getOngoingBans().forEach((key, value) -> this.banMapper.updateBanSync(this.plugin.getServer(), key, value.getBan()));
+    }
+
     @Override
     public void deleteServerData() {
-        CompletableFuture.runAsync(() -> {
-            String sql = "DELETE FROM ah_server " +
-                    "WHERE server_ip = ? AND server_port = ?;";
+        if (this.plugin.isStopping()) {
+            this.deleteServerDataSync();
+            return;
+        }
 
-            try (Connection connection = this.database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                preparedStatement.setString(1, InetAddress.getLocalHost().getHostAddress());
-                preparedStatement.setInt(2, this.plugin.getServer().getPort());
-                preparedStatement.execute();
-            } catch (SQLException | UnknownHostException e) {
-                this.plugin.getLogger().log(Level.SEVERE, "Could not delete server data.", e);
-            }
-        }, this.plugin.getExecutor()).exceptionally(ex -> {
+        CompletableFuture.runAsync(this::deleteServerDataSync, this.plugin.getExecutor()).exceptionally(ex -> {
             this.plugin.getLogger().log(Level.SEVERE, "Could not delete server data asynchronously.", ex);
             return null;
         });
     }
 
+    private void deleteServerDataSync() {
+        String sql = "DELETE FROM ah_server " +
+                "WHERE server_ip = ? AND server_port = ?;";
+
+        try (Connection connection = this.database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+            preparedStatement.setString(1, InetAddress.getLocalHost().getHostAddress());
+            preparedStatement.setInt(2, this.plugin.getServer().getPort());
+            preparedStatement.execute();
+        } catch (SQLException | UnknownHostException e) {
+            this.plugin.getLogger().log(Level.SEVERE, "Could not delete server data.", e);
+        }
+    }
+
     @Override
     public void deleteBanFromServerData(UUID uuid, BanEntry ban) {
-        this.banMapper.updateBan(null, uuid, ban);
+        if (this.plugin.isStopping()) {
+            this.banMapper.updateBanSync(null, uuid, ban);
+        } else {
+            this.banMapper.updateBan(null, uuid, ban);
+        }
     }
 }
