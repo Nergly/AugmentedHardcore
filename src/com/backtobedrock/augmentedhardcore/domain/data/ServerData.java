@@ -143,6 +143,7 @@ public class ServerData {
         Unban unban = this.ongoingBans.remove(player.getUniqueId());
         if (unban != null) {
             unban.getBan().ban().setExpirationDate(LocalDateTime.now());
+            unban.getBan().ban().setNullified(true);
             this.plugin.getPlayerRepository().getByPlayer(player).thenAcceptAsync(playerData -> {
                 this.ongoingIPBans.remove(playerData.getLastKnownIp());
                 if (player.getPlayer() != null) {
