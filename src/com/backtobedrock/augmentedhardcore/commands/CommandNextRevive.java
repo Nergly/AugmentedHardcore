@@ -57,7 +57,7 @@ public class CommandNextRevive extends AbstractCommand {
     }
 
     private void sendSuccessMessage(PlayerData playerData) {
-        long reviveCooldown = playerData.getTimeTillNextRevive();
+        long reviveCooldown = playerData.getPlaytimeTracker().getTimeTillNextRevive();
         this.cs.sendMessage(this.plugin.getMessages().getCommandNextRevive(this.cs instanceof Player && ((Player) this.cs).getUniqueId().toString().equals(playerData.getPlayer().getUniqueId().toString())
                 ? "You"
                 : playerData.getPlayer().getName(), MessageUtils.getTimeFromTicks(reviveCooldown, TimePattern.LONG)));
