@@ -130,6 +130,10 @@ DisableLosingLifePartsInWorlds: [ ]
 #Should the plugin use the death ban system configured below?
 UseDeathBan: true
 
+#If true, UseDeathBan will only stay active while Reviving.GlobalReviveUnDeathBan.Enabled is true.
+#This lets the global schedule control whether death bans are active.
+ControlUseDeathBanWithGlobalReviveUnDeathBan: false
+
 #What ban times should these death causes have when a player reaches 0 lives?
 #Bantime:         The ban time in minutes this damage cause will give the player.
 #                 Minimum is 0, -1 will ban permanently
