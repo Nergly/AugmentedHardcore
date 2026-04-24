@@ -24,6 +24,12 @@ public class MySQLBanMapper extends AbstractMapper implements IBanMapper {
     public BanEntry getBanFromResultSetSync(ResultSet resultSet) {
         try {
             if (resultSet.getObject("ban_id") != null) {
+                boolean nullified;
+                try {
+                    nullified = resultSet.getBoolean("nullified");
+                } catch (SQLException ignored) {
+                    nullified = false;
+                }
                 return new BanEntry(resultSet.getInt("ban_id"),
                         new Ban(
                                 resultSet.getTimestamp("start_date").toLocalDateTime(),
@@ -36,7 +42,8 @@ public class MySQLBanMapper extends AbstractMapper implements IBanMapper {
                                 resultSet.getBoolean("in_combat") ? new Killer(resultSet.getString("in_combat_with_name"), resultSet.getString("in_combat_with_display_name"), ConfigUtils.getEntityType(resultSet.getString("in_combat_with_entity_type"))) : null,
                                 resultSet.getString("death_message"),
                                 resultSet.getLong("time_since_previous_death_ban"),
-                                resultSet.getLong("time_since_previous_death")
+                                resultSet.getLong("time_since_previous_death"),
+                                nullified
                         )
                 );
             }
@@ -69,8 +76,8 @@ public class MySQLBanMapper extends AbstractMapper implements IBanMapper {
     }
 
     public void updateBanSync(Server server, UUID uuid, BanEntry ban) {
-        String sql = "INSERT INTO ah_ban (`ban_id`,`player_uuid`,`server_ip`,`server_port`,`start_date`,`expiration_date`,`ban_time`,`damage_cause`,`damage_cause_type`,`world`,`x`,`y`,`z`,`has_killer`,`killer_name`,`killer_display_name`,`killer_entity_type`,`in_combat`,`in_combat_with_name`,`in_combat_with_display_name`,`in_combat_with_entity_type`,`death_message`,`time_since_previous_death_ban`,`time_since_previous_death`)"
-                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+        String sql = "INSERT INTO ah_ban (`ban_id`,`player_uuid`,`server_ip`,`server_port`,`start_date`,`expiration_date`,`ban_time`,`damage_cause`,`damage_cause_type`,`world`,`x`,`y`,`z`,`has_killer`,`killer_name`,`killer_display_name`,`killer_entity_type`,`in_combat`,`in_combat_with_name`,`in_combat_with_display_name`,`in_combat_with_entity_type`,`death_message`,`time_since_previous_death_ban`,`time_since_previous_death`,`nullified`)"
+                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
                 + "ON DUPLICATE KEY UPDATE "
                 + "`server_ip` = ?,"
                 + "`server_port` = ?,"
@@ -93,11 +100,12 @@ public class MySQLBanMapper extends AbstractMapper implements IBanMapper {
                 + "`in_combat_with_entity_type`= ?,"
                 + "`death_message` = ?,"
                 + "`time_since_previous_death_ban` = ?,"
-                + "`time_since_previous_death` = ?;";
+                + "`time_since_previous_death` = ?,"
+                + "`nullified` = ?;";
 
         try (Connection connection = this.database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             bindBanParameters(preparedStatement, 1, server, uuid, ban);
-            bindBanParameters(preparedStatement, 25, server, uuid, ban);
+            bindBanParameters(preparedStatement, 26, server, uuid, ban);
             preparedStatement.execute();
         } catch (SQLException | UnknownHostException e) {
             this.plugin.getLogger().log(Level.SEVERE, "Could not update ban.", e);
@@ -131,7 +139,8 @@ public class MySQLBanMapper extends AbstractMapper implements IBanMapper {
         preparedStatement.setString(index++, ban.ban().getInCombatWith() == null ? null : ban.ban().getInCombatWith().getType().name());
         preparedStatement.setString(index++, ban.ban().getDeathMessage());
         preparedStatement.setLong(index++, ban.ban().getTimeSincePreviousDeathBan());
-        preparedStatement.setLong(index, ban.ban().getTimeSincePreviousDeath());
+        preparedStatement.setLong(index++, ban.ban().getTimeSincePreviousDeath());
+        preparedStatement.setBoolean(index, ban.ban().isNullified());
     }
 
     @Override

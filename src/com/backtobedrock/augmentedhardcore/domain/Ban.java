@@ -31,8 +31,13 @@ public class Ban {
     private final long timeSincePreviousDeathBan;
     private final long timeSincePreviousDeath;
     private LocalDateTime expirationDate;
+    private boolean nullified;
 
     public Ban(LocalDateTime startDate, LocalDateTime expirationDate, int banTime, DamageCause damageCause, DamageCauseType damageCauseType, Location location, Killer killer, Killer inCombatWith, String deathMessage, long timeSincePreviousDeathBan, long timeSincePreviousDeath) {
+        this(startDate, expirationDate, banTime, damageCause, damageCauseType, location, killer, inCombatWith, deathMessage, timeSincePreviousDeathBan, timeSincePreviousDeath, false);
+    }
+
+    public Ban(LocalDateTime startDate, LocalDateTime expirationDate, int banTime, DamageCause damageCause, DamageCauseType damageCauseType, Location location, Killer killer, Killer inCombatWith, String deathMessage, long timeSincePreviousDeathBan, long timeSincePreviousDeath, boolean nullified) {
         this.plugin = JavaPlugin.getPlugin(AugmentedHardcore.class);
         this.startDate = startDate;
         this.expirationDate = expirationDate;
@@ -45,6 +50,7 @@ public class Ban {
         this.deathMessage = deathMessage;
         this.timeSincePreviousDeathBan = timeSincePreviousDeathBan;
         this.timeSincePreviousDeath = timeSincePreviousDeath;
+        this.nullified = nullified;
     }
 
     public static Ban Deserialize(ConfigurationSection section) {
@@ -59,6 +65,7 @@ public class Ban {
         int cBanTime = section.getInt("BanTime", 0);
         long cTimeSincePreviousDeathBan = section.getLong("TimeSincePreviousDeathBan", 0);
         long cTimeSincePreviousDeath = section.getLong("TimeSincePreviousDeath", 0);
+        boolean cNullified = section.getBoolean("Nullified", false);
 
         ConfigurationSection locationSection = section.getConfigurationSection("Location");
         if (locationSection != null) {
@@ -76,7 +83,7 @@ public class Ban {
             cInCombatWith = Killer.Deserialize(inCombatWithSection);
         }
 
-        return new Ban(cStartDate, cExpirationDate, cBanTime, cDamageCause, cDamageCauseType, cLocation, cKiller, cInCombatWith, cDeathMessage, cTimeSincePreviousDeathBan, cTimeSincePreviousDeath);
+        return new Ban(cStartDate, cExpirationDate, cBanTime, cDamageCause, cDamageCauseType, cLocation, cKiller, cInCombatWith, cDeathMessage, cTimeSincePreviousDeathBan, cTimeSincePreviousDeath, cNullified);
     }
 
     public String getBanMessage() {
@@ -120,6 +127,14 @@ public class Ban {
         return banTime;
     }
 
+    public boolean isNullified() {
+        return nullified;
+    }
+
+    public void setNullified(boolean nullified) {
+        this.nullified = nullified;
+    }
+
     public Map<String, Object> serialize() {
         Map<String, Object> map = new HashMap<>();
         Map<String, Object> locationMap = new HashMap<>();
@@ -140,6 +155,7 @@ public class Ban {
         map.put("BanTime", this.banTime);
         map.put("TimeSincePreviousDeathBan", this.timeSincePreviousDeathBan);
         map.put("TimeSincePreviousDeath", this.timeSincePreviousDeath);
+        map.put("Nullified", this.nullified);
 
         return map;
     }
