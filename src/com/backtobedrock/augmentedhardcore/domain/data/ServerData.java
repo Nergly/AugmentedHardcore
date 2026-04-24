@@ -122,6 +122,23 @@ public class ServerData {
         return false;
     }
 
+    public void rescheduleBan(UUID uuid) {
+        Unban unban = this.getBan(uuid);
+        if (unban == null) {
+            return;
+        }
+
+        unban.stop();
+
+        BanEntry banEntry = unban.getBan();
+        OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
+        Unban replacement = new Unban(player, banEntry);
+        this.ongoingBans.put(uuid, replacement);
+        if (banEntry.ban().getBanTime() != -1) {
+            replacement.start();
+        }
+    }
+
     public void removeBan(OfflinePlayer player) {
         Unban unban = this.ongoingBans.remove(player.getUniqueId());
         if (unban != null) {
