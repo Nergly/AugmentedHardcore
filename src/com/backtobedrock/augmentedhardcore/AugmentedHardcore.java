@@ -83,8 +83,6 @@ public class AugmentedHardcore extends JavaPlugin implements Listener {
         //update checker
         this.updateChecker = new UpdateChecker();
         this.updateChecker.start();
-        this.globalReviveUnDeathBan = new GlobalReviveUnDeathBan();
-        this.globalReviveUnDeathBan.start();
 
         //bstats metrics
         Metrics metrics = new Metrics(this, 10843);
@@ -150,6 +148,12 @@ public class AugmentedHardcore extends JavaPlugin implements Listener {
         this.setupDatabase();
         this.initRepositories();
         this.registerListeners();
+
+        if (this.globalReviveUnDeathBan != null) {
+            this.globalReviveUnDeathBan.stop();
+        }
+        this.globalReviveUnDeathBan = new GlobalReviveUnDeathBan();
+        this.globalReviveUnDeathBan.start();
     }
 
     private void prepareConfigFiles() {
