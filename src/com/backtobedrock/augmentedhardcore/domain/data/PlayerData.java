@@ -107,6 +107,12 @@ public class PlayerData {
     }
 
     public long getTimeTillNextRevive() {
+        if (this.plugin.getConfigurations().getReviveConfiguration().getGlobalReviveUnDeathBanConfiguration().isEnabled()) {
+            if (this.plugin.getGlobalReviveUnDeathBan() != null) {
+                return this.plugin.getGlobalReviveUnDeathBan().getTicksUntilNextRun();
+            }
+            return 0L;
+        }
         return this.playtimeTracker.getTimeTillNextRevive();
     }
 
@@ -261,12 +267,7 @@ public class PlayerData {
             return;
         }
 
-        //check if losing lives is limited to specific worlds
-        //If EnableLosingLivesInWorlds is empty, losing lives is enabled in all worlds.
-        //If it has entries, players only lose lives in those listed worlds.
-        List<String> enabledWorlds = this.plugin.getConfigurations().getLivesAndLifePartsConfiguration().getEnableLosingLivesInWorlds();
-
-        if (!enabledWorlds.isEmpty() && !enabledWorlds.contains(player.getWorld().getName().toLowerCase())) {
+        if (this.plugin.getConfigurations().getLivesAndLifePartsConfiguration().getDisableLosingLivesInWorlds().contains(player.getWorld().getName().toLowerCase())) {
             return;
         }
 
@@ -545,7 +546,9 @@ public class PlayerData {
         }
 
         if (this.plugin.getConfigurations().getReviveConfiguration().isUseRevive() && this.plugin.getConfigurations().getReviveConfiguration().getTimeBetweenRevives() > 0 && !this.isSpectatorBanned() && !player.hasPermission(Permission.BYPASS_REVIVECOOLDOWN.getPermissionString())) {
-            this.playtime.add(new PlaytimeRevive(this, player));
+            if (!this.plugin.getConfigurations().getReviveConfiguration().getGlobalReviveUnDeathBanConfiguration().isEnabled()) {
+                this.playtime.add(new PlaytimeRevive(this, player));
+            }
         }
 
         this.playtime.forEach(AbstractPlaytime::start);
@@ -648,7 +651,9 @@ public class PlayerData {
             }
             revivingData.onRevive(reviverPlayer);
 
-            this.setTimeTillNextRevive(this.plugin.getConfigurations().getReviveConfiguration().getTimeBetweenRevives());
+            if (!this.plugin.getConfigurations().getReviveConfiguration().getGlobalReviveUnDeathBanConfiguration().isEnabled()) {
+                this.setTimeTillNextRevive(this.plugin.getConfigurations().getReviveConfiguration().getTimeBetweenRevives());
+            }
 
             int amount = this.plugin.getConfigurations().getReviveConfiguration().getLivesLostOnReviving();
             this.decreaseLives(amount);
@@ -742,6 +747,10 @@ public class PlayerData {
 
     public void onReload(Player player) {
         this.onJoin(player);
+    }
+
+    public void resetReviveCooldown() {
+        this.setTimeTillNextRevive(0L);
     }
 
     public Map<String, Object> serialize() {
