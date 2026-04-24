@@ -409,7 +409,9 @@ BanType: name
 #Timesincelastdeath: Time since last death will be used for determining the bantime.
 #                    Bantimes will increase the longer the player stays alive.
 #                    Every death will reset the bantime back to 0, above times will be used as maximum ban time.
-# -> static/bancount/playtime/timesincelastdeath
+#Globalrevive:       Time until the next GlobalReviveUnDeathBan run will be used for determining the bantime.
+#                    This effectively bans players until the next global revive/un-deathban executes.
+# -> static/bancount/playtime/timesincelastdeath/globalrevive
 BanTimeType: static
 
 #At what rate should the ban time by playtime grow?

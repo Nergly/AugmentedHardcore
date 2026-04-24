@@ -13,7 +13,8 @@ public enum BanTimeType {
     STATIC,
     BANCOUNT,
     PLAYTIME,
-    TIMESINCELASTDEATH;
+    TIMESINCELASTDEATH,
+    GLOBALREVIVE;
 
     public int getBantime(Player player, PlayerData playerData, int max) {
         GrowthType growthType = JavaPlugin.getPlugin(AugmentedHardcore.class).getConfigurations().getDeathBanConfiguration().getBanTimeByPlaytimeGrowthType();
@@ -26,6 +27,8 @@ public enum BanTimeType {
                 return growthType.getBanTime(player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 1200, max);
             case TIMESINCELASTDEATH:
                 return growthType.getBanTime((int) MessageUtils.timeBetweenDatesToTicks(LocalDateTime.now(), playerData.getLastDeath()) / 1200, max);
+            case GLOBALREVIVE:
+                return (int) Math.max(playerData.getTimeTillNextRevive() / 1200, 0);
             default:
                 return 0;
         }
