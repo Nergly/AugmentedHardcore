@@ -18,7 +18,7 @@ public class ConfigurationLivesAndLifeParts {
     private final int livesAtStart;
     private final int livesAfterBan;
     private final int livesLostPerDeath;
-    private final List<String> disableLosingLivesInWorlds;
+    private final List<String> enableLosingLivesInWorlds;
 
     //life parts
     private final boolean useLifeParts;
@@ -42,7 +42,7 @@ public class ConfigurationLivesAndLifeParts {
             int livesAtStart,
             int livesAfterBan,
             int livesLostPerDeath,
-            List<String> disableLosingLivesInWorlds,
+            List<String> enableLosingLivesInWorlds,
             //life parts
             boolean useLifeParts,
             int maxLifeParts,
@@ -63,7 +63,7 @@ public class ConfigurationLivesAndLifeParts {
         this.livesAtStart = livesAtStart;
         this.livesAfterBan = livesAfterBan;
         this.livesLostPerDeath = livesLostPerDeath;
-        this.disableLosingLivesInWorlds = disableLosingLivesInWorlds;
+        this.enableLosingLivesInWorlds = enableLosingLivesInWorlds;
 
         //life parts
         this.useLifeParts = useLifeParts;
@@ -88,7 +88,7 @@ public class ConfigurationLivesAndLifeParts {
         OptionalInt cLivesAtStart = ConfigUtils.checkMinMax("LivesAtStart", section.getInt("LivesAtStart", 1), 1, Integer.MAX_VALUE);
         OptionalInt cLivesAfterBan = ConfigUtils.checkMinMax("LivesAfterBan", section.getInt("LivesAfterBan", 1), 1, Integer.MAX_VALUE);
         OptionalInt cLivesLostPerDeath = ConfigUtils.checkMinMax("LivesLostPerDeath", section.getInt("LivesLostPerDeath", 1), 1, Integer.MAX_VALUE);
-        List<String> cDisableLosingLivesInWorlds = section.getStringList("DisableLosingLivesInWorlds").stream().map(String::toLowerCase).toList();
+        List<String> cEnableLosingLivesInWorlds = section.getStringList("EnableLosingLivesInWorlds").stream().map(String::toLowerCase).toList();
 
         //life parts
         boolean cUseLifeParts = section.getBoolean("UseLifeParts", true);
@@ -154,7 +154,7 @@ public class ConfigurationLivesAndLifeParts {
                 vLivesAtStart,
                 vLivesAfterBan,
                 vLivesLostPerDeath,
-                cDisableLosingLivesInWorlds,
+                cEnableLosingLivesInWorlds,
                 //life parts
                 cUseLifeParts,
                 vMaxLifeParts,
@@ -200,8 +200,8 @@ public class ConfigurationLivesAndLifeParts {
         return livesLostPerDeath;
     }
 
-    public List<String> getDisableLosingLivesInWorlds() {
-        return disableLosingLivesInWorlds;
+    public List<String> getEnableLosingLivesInWorlds() {
+        return enableLosingLivesInWorlds;
     }
 
     public boolean isUseLifeParts() {

@@ -44,7 +44,7 @@ LivesLostPerDeath: 1
 #Should losing lives only be enabled in specific worlds?
 #Leave empty to enable losing lives in all worlds.
 #Add worlds here to make losing lives world-specific.
-EnableLosingLivesInWorlds: [world, world_nether, world_the_end]
+EnableLosingLivesInWorlds: [ ]
 #- world
 #- world_nether
 #- world_the_end

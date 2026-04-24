@@ -267,7 +267,11 @@ public class PlayerData {
             return;
         }
 
-        if (this.plugin.getConfigurations().getLivesAndLifePartsConfiguration().getDisableLosingLivesInWorlds().contains(player.getWorld().getName().toLowerCase())) {
+        //check if losing lives is limited to specific worlds
+        //If EnableLosingLivesInWorlds is empty, losing lives is enabled in all worlds.
+        //If it has entries, players only lose lives in those listed worlds.
+        List<String> enabledWorlds = this.plugin.getConfigurations().getLivesAndLifePartsConfiguration().getEnableLosingLivesInWorlds();
+        if (!enabledWorlds.isEmpty() && !enabledWorlds.contains(player.getWorld().getName().toLowerCase())) {
             return;
         }
 
