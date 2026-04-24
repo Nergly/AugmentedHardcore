@@ -572,7 +572,7 @@ GlobalReviveUnDeathBan:
   #Only used by INTERVAL_HOURS.
   IntervalHours: 24
 
-  #Used by DAILY / WEEKLY / MONTHLY. 24h format (HH:mm).
+  #Used by DAILY / WEEKLY / MONTHLY. 24h format (HH:mm). Keep this quoted (e.g. "11:53").
   TimeOfDay: "00:00"
 
   #Only used by WEEKLY.
