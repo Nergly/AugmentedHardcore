@@ -106,7 +106,7 @@ public class GlobalReviveUnDeathBan extends BukkitRunnable {
                     long secondsUntilNextRun = Math.max(0L, java.time.Duration.between(ZonedDateTime.now(this.configuration.getTimezone()), this.nextRunAt).getSeconds());
                     serverData.getOngoingBans().forEach((uuid, unban) -> {
                         unban.getBan().ban().setExpirationDate(java.time.LocalDateTime.now().plusSeconds(secondsUntilNextRun));
-                        unban.reschedule();
+                        serverData.rescheduleBan(uuid);
                     });
                     this.plugin.getServerRepository().updateServerData(serverData);
                 }, this.plugin.getExecutor())
