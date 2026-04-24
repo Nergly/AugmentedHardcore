@@ -27,6 +27,13 @@ public class Unban extends BukkitRunnable {
         this.runTaskLaterAsynchronously(this.plugin, MessageUtils.timeUnitToTicks(ChronoUnit.SECONDS.between(LocalDateTime.now(), this.ban.ban().getExpirationDate()), TimeUnit.SECONDS));
     }
 
+    public void reschedule() {
+        this.stop();
+        if (this.ban.ban().getBanTime() != -1) {
+            this.start();
+        }
+    }
+
     private void stop() {
         try {
             this.cancel();

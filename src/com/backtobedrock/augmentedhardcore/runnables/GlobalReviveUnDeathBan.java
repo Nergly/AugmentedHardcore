@@ -3,6 +3,7 @@ package com.backtobedrock.augmentedhardcore.runnables;
 import com.backtobedrock.augmentedhardcore.AugmentedHardcore;
 import com.backtobedrock.augmentedhardcore.domain.configurationDomain.configurationHelperClasses.GlobalReviveUnDeathBanConfiguration;
 import com.backtobedrock.augmentedhardcore.domain.data.ServerData;
+import com.backtobedrock.augmentedhardcore.domain.enums.BanTimeType;
 import com.backtobedrock.augmentedhardcore.domain.enums.GlobalResetScheduleType;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -35,6 +36,7 @@ public class GlobalReviveUnDeathBan extends BukkitRunnable {
         }
         this.plugin.getLogger().log(Level.INFO, "GlobalReviveUnDeathBan enabled. Next run scheduled for {0}.", this.nextRunAt);
         this.task = this.runTaskTimer(this.plugin, 1200L, 1200L);
+        this.resyncGlobalReviveBanExpirations();
     }
 
     public void stop() {
@@ -92,6 +94,26 @@ public class GlobalReviveUnDeathBan extends BukkitRunnable {
                 }
             }, this.plugin.getExecutor());
         }
+    }
+
+    private void resyncGlobalReviveBanExpirations() {
+        if (this.plugin.getConfigurations().getDeathBanConfiguration().getBanTimeType() != BanTimeType.GLOBALREVIVE) {
+            return;
+        }
+
+        this.plugin.getServerRepository().getServerData(this.plugin.getServer())
+                .thenAcceptAsync(serverData -> {
+                    long secondsUntilNextRun = Math.max(0L, java.time.Duration.between(ZonedDateTime.now(this.configuration.getTimezone()), this.nextRunAt).getSeconds());
+                    serverData.getOngoingBans().forEach((uuid, unban) -> {
+                        unban.getBan().ban().setExpirationDate(java.time.LocalDateTime.now().plusSeconds(secondsUntilNextRun));
+                        unban.reschedule();
+                    });
+                    this.plugin.getServerRepository().updateServerData(serverData);
+                }, this.plugin.getExecutor())
+                .exceptionally(ex -> {
+                    this.plugin.getLogger().log(Level.SEVERE, "Failed to resync ongoing global-revive death bans.", ex);
+                    return null;
+                });
     }
 
     private ZonedDateTime computeNextRun(ZonedDateTime now) {
