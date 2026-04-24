@@ -74,13 +74,7 @@ public class ConfigurationRevive {
 
         int intervalHours = Math.max(1, section.getInt("IntervalHours", 24));
 
-        LocalTime timeOfDay;
-        try {
-            timeOfDay = LocalTime.parse(section.getString("TimeOfDay", "00:00"));
-        } catch (Exception ex) {
-            JavaPlugin.getPlugin(AugmentedHardcore.class).getLogger().log(Level.WARNING, "Invalid GlobalReviveUnDeathBan.TimeOfDay value. Expected HH:mm, defaulting to 00:00.");
-            timeOfDay = LocalTime.MIDNIGHT;
-        }
+        LocalTime timeOfDay = parseTimeOfDay(section);
 
         DayOfWeek dayOfWeek;
         try {
@@ -101,6 +95,40 @@ public class ConfigurationRevive {
         }
 
         return new GlobalReviveUnDeathBanConfiguration(enabled, scheduleType, intervalHours, timeOfDay, dayOfWeek, dayOfMonth, timezone);
+    }
+
+    private static LocalTime parseTimeOfDay(ConfigurationSection section) {
+        Object rawTimeOfDay = section.get("TimeOfDay");
+
+        if (rawTimeOfDay instanceof Number number) {
+            int minutesSinceMidnight = number.intValue();
+            if (minutesSinceMidnight >= 0 && minutesSinceMidnight < 24 * 60) {
+                JavaPlugin.getPlugin(AugmentedHardcore.class).getLogger().log(Level.WARNING, "GlobalReviveUnDeathBan.TimeOfDay was loaded as a number ({0}). This can happen when HH:mm is unquoted in YAML. Interpreting it as minutes since midnight.", minutesSinceMidnight);
+                return LocalTime.of(minutesSinceMidnight / 60, minutesSinceMidnight % 60);
+            }
+
+            JavaPlugin.getPlugin(AugmentedHardcore.class).getLogger().log(Level.WARNING, "Invalid GlobalReviveUnDeathBan.TimeOfDay numeric value ({0}). Expected HH:mm, defaulting to 00:00.", minutesSinceMidnight);
+            return LocalTime.MIDNIGHT;
+        }
+
+        String rawTimeOfDayString = section.getString("TimeOfDay", "00:00");
+
+        try {
+            return LocalTime.parse(rawTimeOfDayString);
+        } catch (Exception ignored) {
+            try {
+                int minutesSinceMidnight = Integer.parseInt(rawTimeOfDayString);
+                if (minutesSinceMidnight >= 0 && minutesSinceMidnight < 24 * 60) {
+                    JavaPlugin.getPlugin(AugmentedHardcore.class).getLogger().log(Level.WARNING, "GlobalReviveUnDeathBan.TimeOfDay looked numeric ({0}). Interpreting it as minutes since midnight.", minutesSinceMidnight);
+                    return LocalTime.of(minutesSinceMidnight / 60, minutesSinceMidnight % 60);
+                }
+            } catch (NumberFormatException ignoredAgain) {
+                // ignored intentionally, falls through to default warning below
+            }
+
+            JavaPlugin.getPlugin(AugmentedHardcore.class).getLogger().log(Level.WARNING, "Invalid GlobalReviveUnDeathBan.TimeOfDay value. Expected HH:mm, defaulting to 00:00.");
+            return LocalTime.MIDNIGHT;
+        }
     }
 
     public boolean isUseRevive() {
