@@ -19,7 +19,6 @@ import java.util.logging.Level;
 
 public class ConfigurationDeathBan {
     private final boolean useDeathBan;
-    private final boolean controlUseDeathBanWithGlobalReviveUnDeathBan;
     private final EnumMap<DamageCause, BanConfiguration> banTimes;
     private final BanList.Type banType;
     private final BanTimeType banTimeType;
@@ -30,9 +29,8 @@ public class ConfigurationDeathBan {
     private final List<String> commandsOnDeathBan;
     private final List<String> disableBanInWorlds;
 
-    public ConfigurationDeathBan(boolean useDeathBan, boolean controlUseDeathBanWithGlobalReviveUnDeathBan, EnumMap<DamageCause, BanConfiguration> banTimes, BanList.Type banType, BanTimeType banTimeType, GrowthType banTimeByPlaytimeGrowthType, boolean selfHarmBan, boolean lightningOnDeathBan, String spectatorBanRespawnWorld, List<String> commandsOnDeathBan, List<String> disableBanInWorlds) {
+    public ConfigurationDeathBan(boolean useDeathBan, EnumMap<DamageCause, BanConfiguration> banTimes, BanList.Type banType, BanTimeType banTimeType, GrowthType banTimeByPlaytimeGrowthType, boolean selfHarmBan, boolean lightningOnDeathBan, String spectatorBanRespawnWorld, List<String> commandsOnDeathBan, List<String> disableBanInWorlds) {
         this.useDeathBan = useDeathBan;
-        this.controlUseDeathBanWithGlobalReviveUnDeathBan = controlUseDeathBanWithGlobalReviveUnDeathBan;
         this.banTimes = banTimes;
         this.banType = banType;
         this.banTimeType = banTimeType;
@@ -49,7 +47,6 @@ public class ConfigurationDeathBan {
 
         //configurations
         boolean cUseDeathBan = section.getBoolean("UseDeathBan", true);
-        boolean cControlUseDeathBanWithGlobalReviveUnDeathBan = section.getBoolean("ControlUseDeathBanWithGlobalReviveUnDeathBan", false);
         EnumMap<DamageCause, BanConfiguration> cBanTimes = new EnumMap<>(DamageCause.class);
         BanList.Type cBanType = ConfigUtils.getBanType("BanType", section.getString("BanType", BanList.Type.NAME.name()), BanList.Type.NAME);
         BanTimeType cBanTimeType = ConfigUtils.getBanTimeType("BanTimeType", section.getString("BanTimeType", BanTimeType.STATIC.name()), BanTimeType.STATIC);
@@ -77,7 +74,6 @@ public class ConfigurationDeathBan {
 
         return new ConfigurationDeathBan(
                 cUseDeathBan,
-                cControlUseDeathBanWithGlobalReviveUnDeathBan,
                 cBanTimes,
                 cBanType,
                 cBanTimeType,
@@ -115,19 +111,7 @@ public class ConfigurationDeathBan {
     }
 
     public boolean isUseDeathBan() {
-        if (!this.useDeathBan) {
-            return false;
-        }
-
-        if (!this.controlUseDeathBanWithGlobalReviveUnDeathBan) {
-            return true;
-        }
-
-        return JavaPlugin.getPlugin(AugmentedHardcore.class).getConfigurations().getReviveConfiguration().getGlobalReviveUnDeathBanConfiguration().isEnabled();
-    }
-
-    public boolean isControlUseDeathBanWithGlobalReviveUnDeathBan() {
-        return controlUseDeathBanWithGlobalReviveUnDeathBan;
+        return useDeathBan;
     }
 
     public boolean isLightningOnDeathBan() {
