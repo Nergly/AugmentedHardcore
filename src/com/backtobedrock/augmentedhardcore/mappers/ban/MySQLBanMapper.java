@@ -17,6 +17,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 
 public class MySQLBanMapper extends AbstractMapper implements IBanMapper {
+    private volatile Boolean hasNullifiedColumn = null;
+
     public MySQLBanMapper(AugmentedHardcore plugin) {
         super(plugin);
     }
@@ -76,9 +78,40 @@ public class MySQLBanMapper extends AbstractMapper implements IBanMapper {
     }
 
     public void updateBanSync(Server server, UUID uuid, BanEntry ban) {
-        String sql = "INSERT INTO ah_ban (`ban_id`,`player_uuid`,`server_ip`,`server_port`,`start_date`,`expiration_date`,`ban_time`,`damage_cause`,`damage_cause_type`,`world`,`x`,`y`,`z`,`has_killer`,`killer_name`,`killer_display_name`,`killer_entity_type`,`in_combat`,`in_combat_with_name`,`in_combat_with_display_name`,`in_combat_with_entity_type`,`death_message`,`time_since_previous_death_ban`,`time_since_previous_death`,`nullified`)"
-                + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-                + "ON DUPLICATE KEY UPDATE "
+        try (Connection connection = this.database.getConnection()) {
+            boolean includeNullified = this.hasNullifiedColumn(connection);
+            String sql = this.getUpdateSql(includeNullified);
+            int updateOffset = includeNullified ? 26 : 25;
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+                bindBanParameters(preparedStatement, 1, server, uuid, ban, includeNullified);
+                bindBanParameters(preparedStatement, updateOffset, server, uuid, ban, includeNullified);
+                preparedStatement.execute();
+            }
+        } catch (SQLException | UnknownHostException e) {
+            this.plugin.getLogger().log(Level.SEVERE, "Could not update ban.", e);
+        }
+    }
+
+    private boolean hasNullifiedColumn(Connection connection) throws SQLException {
+        if (this.hasNullifiedColumn != null) {
+            return this.hasNullifiedColumn;
+        }
+
+        synchronized (this) {
+            if (this.hasNullifiedColumn != null) {
+                return this.hasNullifiedColumn;
+            }
+            try (ResultSet columns = connection.getMetaData().getColumns(connection.getCatalog(), null, "ah_ban", "nullified")) {
+                this.hasNullifiedColumn = columns.next();
+            }
+            return this.hasNullifiedColumn;
+        }
+    }
+
+    private String getUpdateSql(boolean includeNullified) {
+        String base = "INSERT INTO ah_ban (`ban_id`,`player_uuid`,`server_ip`,`server_port`,`start_date`,`expiration_date`,`ban_time`,`damage_cause`,`damage_cause_type`,`world`,`x`,`y`,`z`,`has_killer`,`killer_name`,`killer_display_name`,`killer_entity_type`,`in_combat`,`in_combat_with_name`,`in_combat_with_display_name`,`in_combat_with_entity_type`,`death_message`,`time_since_previous_death_ban`,`time_since_previous_death`";
+        String values = "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?";
+        String update = "ON DUPLICATE KEY UPDATE "
                 + "`server_ip` = ?,"
                 + "`server_port` = ?,"
                 + "`start_date` = ?,"
@@ -100,19 +133,17 @@ public class MySQLBanMapper extends AbstractMapper implements IBanMapper {
                 + "`in_combat_with_entity_type`= ?,"
                 + "`death_message` = ?,"
                 + "`time_since_previous_death_ban` = ?,"
-                + "`time_since_previous_death` = ?,"
-                + "`nullified` = ?;";
+                + "`time_since_previous_death` = ?";
 
-        try (Connection connection = this.database.getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-            bindBanParameters(preparedStatement, 1, server, uuid, ban);
-            bindBanParameters(preparedStatement, 26, server, uuid, ban);
-            preparedStatement.execute();
-        } catch (SQLException | UnknownHostException e) {
-            this.plugin.getLogger().log(Level.SEVERE, "Could not update ban.", e);
+        if (includeNullified) {
+            return base + ",`nullified`) "
+                    + values + ",?) "
+                    + update + ",`nullified` = ?;";
         }
+        return base + ") " + values + ") " + update + ";";
     }
 
-    private void bindBanParameters(PreparedStatement preparedStatement, int startIndex, Server server, UUID uuid, BanEntry ban) throws SQLException, UnknownHostException {
+    private void bindBanParameters(PreparedStatement preparedStatement, int startIndex, Server server, UUID uuid, BanEntry ban, boolean includeNullified) throws SQLException, UnknownHostException {
         int index = startIndex;
         if (startIndex == 1) {
             preparedStatement.setInt(index++, ban.id());
@@ -140,7 +171,9 @@ public class MySQLBanMapper extends AbstractMapper implements IBanMapper {
         preparedStatement.setString(index++, ban.ban().getDeathMessage());
         preparedStatement.setLong(index++, ban.ban().getTimeSincePreviousDeathBan());
         preparedStatement.setLong(index++, ban.ban().getTimeSincePreviousDeath());
-        preparedStatement.setBoolean(index, ban.ban().isNullified());
+        if (includeNullified) {
+            preparedStatement.setBoolean(index, ban.ban().isNullified());
+        }
     }
 
     @Override
