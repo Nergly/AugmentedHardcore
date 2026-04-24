@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS ah_ban
     death_message TINYTEXT NOT NULL,
     time_since_previous_death_ban BIGINT UNSIGNED NOT NULL,
     time_since_previous_death BIGINT UNSIGNED NOT NULL,
+    nullified TINYINT NOT NULL DEFAULT 0,
     PRIMARY KEY (ban_id,player_uuid),
     CONSTRAINT player_uuid FOREIGN KEY (player_uuid) REFERENCES ah_player (player_uuid) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_server FOREIGN KEY (server_ip, server_port) REFERENCES ah_server (server_ip, server_port) ON DELETE SET NULL ON UPDATE SET NULL

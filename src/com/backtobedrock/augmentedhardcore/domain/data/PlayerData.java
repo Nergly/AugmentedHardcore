@@ -332,8 +332,12 @@ public class PlayerData {
             return;
         }
 
-        //ban player
+        //always store a death record, even when it does not trigger an active death ban
         if (ban.getBanTime() == 0) {
+            ban.setNullified(true);
+            BanEntry entry = this.addBan(ban);
+            this.plugin.getServerRepository().removeBanFromServerData(this.player.getUniqueId(), entry);
+            this.plugin.getPlayerRepository().updatePlayerData(this);
             return;
         }
 
