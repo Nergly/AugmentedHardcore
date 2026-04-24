@@ -560,6 +560,28 @@ DisableReviveInWorlds: [ ]
 #- world_nether
 #- world_the_end
 
+#Run a global schedule that resets revive cooldowns for everyone and removes all active death-bans.
+GlobalReviveUnDeathBan:
+  Enabled: false
+
+  #Options: DAILY / WEEKLY / MONTHLY / INTERVAL_HOURS
+  ScheduleType: "DAILY"
+
+  #Only used by INTERVAL_HOURS.
+  IntervalHours: 24
+
+  #Used by DAILY / WEEKLY / MONTHLY. 24h format (HH:mm).
+  TimeOfDay: "00:00"
+
+  #Only used by WEEKLY.
+  DayOfWeek: "MONDAY"
+
+  #Only used by MONTHLY.
+  DayOfMonth: 1
+
+  #Timezone used for this schedule (examples: UTC, America/New_York, Europe/Amsterdam).
+  Timezone: "UTC"
+
 
 ############################################################
 # +------------------------------------------------------+ #

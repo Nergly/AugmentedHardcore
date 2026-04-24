@@ -13,6 +13,7 @@ import com.backtobedrock.augmentedhardcore.mappers.Patch;
 import com.backtobedrock.augmentedhardcore.mappers.player.patches.LastDeathAdditionPatch;
 import com.backtobedrock.augmentedhardcore.repositories.PlayerRepository;
 import com.backtobedrock.augmentedhardcore.repositories.ServerRepository;
+import com.backtobedrock.augmentedhardcore.runnables.GlobalReviveUnDeathBan;
 import com.backtobedrock.augmentedhardcore.runnables.UpdateChecker;
 import com.backtobedrock.augmentedhardcore.utilities.Metrics;
 import com.backtobedrock.augmentedhardcore.utilities.placeholderAPI.PlaceholdersAugmentedHardcore;
@@ -58,6 +59,7 @@ public class AugmentedHardcore extends JavaPlugin implements Listener {
 
     //runnables
     private UpdateChecker updateChecker;
+    private GlobalReviveUnDeathBan globalReviveUnDeathBan;
 
     //async executor
     private ExecutorService executor;
@@ -81,6 +83,8 @@ public class AugmentedHardcore extends JavaPlugin implements Listener {
         //update checker
         this.updateChecker = new UpdateChecker();
         this.updateChecker.start();
+        this.globalReviveUnDeathBan = new GlobalReviveUnDeathBan();
+        this.globalReviveUnDeathBan.start();
 
         //bstats metrics
         Metrics metrics = new Metrics(this, 10843);
@@ -108,6 +112,9 @@ public class AugmentedHardcore extends JavaPlugin implements Listener {
 
         if (this.updateChecker != null) {
             this.updateChecker.stop();
+        }
+        if (this.globalReviveUnDeathBan != null) {
+            this.globalReviveUnDeathBan.stop();
         }
 
         if (this.executor != null) {
@@ -317,6 +324,10 @@ public class AugmentedHardcore extends JavaPlugin implements Listener {
 
     public UpdateChecker getUpdateChecker() {
         return updateChecker;
+    }
+
+    public GlobalReviveUnDeathBan getGlobalReviveUnDeathBan() {
+        return globalReviveUnDeathBan;
     }
 
     public ExecutorService getExecutor() {

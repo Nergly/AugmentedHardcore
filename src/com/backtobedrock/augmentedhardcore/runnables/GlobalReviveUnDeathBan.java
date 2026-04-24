@@ -10,7 +10,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -98,7 +97,7 @@ public class GlobalReviveUnDeathBan extends BukkitRunnable {
                 yield candidate;
             }
             case MONTHLY -> {
-                int day = Math.min(this.configuration.getDayOfMonth(), YearMonth.from(LocalDateTime.now(zone)).lengthOfMonth());
+                int day = Math.min(this.configuration.getDayOfMonth(), YearMonth.from(now).lengthOfMonth());
                 ZonedDateTime candidate = now.withDayOfMonth(day).with(this.configuration.getTimeOfDay());
                 if (!candidate.isAfter(now)) {
                     ZonedDateTime nextMonth = now.plusMonths(1);
