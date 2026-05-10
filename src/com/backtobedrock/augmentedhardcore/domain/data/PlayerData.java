@@ -516,8 +516,19 @@ public class PlayerData {
     }
 
     public void unCombatTag() {
-        if (!this.combatTag.isEmpty()) {
-            new ArrayList<>(this.combatTag).forEach(AbstractCombatTag::stop);
+        if (this.combatTag == null || this.combatTag.isEmpty()) {
+            return;
+        }
+
+        Iterator<AbstractCombatTag> iterator = this.combatTag.iterator();
+        while (iterator.hasNext()) {
+            AbstractCombatTag tag = iterator.next();
+            if (tag == null) {
+                iterator.remove();
+                continue;
+            }
+
+            tag.stop();
         }
     }
 
